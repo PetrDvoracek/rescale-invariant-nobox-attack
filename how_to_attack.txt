@@ -1,0 +1,33 @@
+# dataset pred utokem
+$ tree /datasets/dummyin1k 
+/datasets/dummyin1k
+└── val
+    └── 1stcls
+        └── ILSVRC2012_val_00000307.JPEG
+ 
+ # utok
+ python attack_dataset.py /datasets/dummyin1k ./epoch=419-step=130740.ckpt --dataset in1k --device cuda
+
+ # dataset po utoku (skript udela nove slozky)
+ $ tree /datasets/dummyin1k
+/datasets/dummyin1k
+├── val
+│   └── 1stcls
+│       └── ILSVRC2012_val_00000307.JPEG
+├── val_224x224
+│   └── 1stcls
+├── val_model-epoch=419-step=130740.ckpt_a-0.0_
+│   └── 1stcls
+│       └── ILSVRC2012_val_00000307.JPEG
+├── val_model-epoch=419-step=130740.ckpt_a-0.3_
+│   └── 1stcls
+│       └── ILSVRC2012_val_00000307.JPEG
+├── val_model-epoch=419-step=130740.ckpt_a-0.5_
+│   └── 1stcls
+│       └── ILSVRC2012_val_00000307.JPEG
+├── val_model-epoch=419-step=130740.ckpt_a-0.7_
+│   └── 1stcls
+│       └── ILSVRC2012_val_00000307.JPEG
+└── val_model-epoch=419-step=130740.ckpt_a-1.0_
+    └── 1stcls
+        └── ILSVRC2012_val_00000307.JPEG
