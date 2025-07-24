@@ -187,9 +187,8 @@ trainer = L.Trainer(
     callbacks=[
         L.pytorch.callbacks.ModelCheckpoint(
             dirpath=f"./models/{id}",
-            mode="min",
-            monitor="val top1 1.0*adv",
-            save_top_k=5,
+            save_top_k=-1,  # save all
+            every_n_train_steps=2535,
         ),
         L.pytorch.callbacks.LearningRateMonitor(),
     ],
