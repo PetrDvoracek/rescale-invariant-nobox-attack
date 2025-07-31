@@ -126,12 +126,8 @@ def main(dataset_root, ckpt, tag, dataset, device):
         for a in alphas:
             adv_im = np.clip((im.astype(np.float32) / 255) + (a * canvas_diff), 0, 1.0)
             adv_im = (adv_im * 255).astype(np.uint8)
-            print(adv_im.max(), adv_im.min(), adv_im.mean())
 
-            print(f"p {p}")
-            print(f"a {a}")
             imname = adjust_imname(p, a)
-            print(f"imname {imname}")
             ret = cv2.imwrite(
                 imname,
                 # f"./tmp{a}.jpg",
