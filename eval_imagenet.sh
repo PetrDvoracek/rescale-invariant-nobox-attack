@@ -1,0 +1,1 @@
+for x in 0 0.3 0.5 0.7; do python timm_validate_imagenet.py --data-dir /datasets/imagenet/rescale-invariant-nobox-attack/_adversarial-${x}_tag-emuzc/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-${0.7}_tag-emuzc.csv; done

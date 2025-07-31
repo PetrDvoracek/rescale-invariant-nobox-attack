@@ -32,9 +32,7 @@ def prepare_in1k(path, imagenet_classes):
 )
 @click.option("--device", default="cpu")
 def main(dataset_root, ckpt, tag, dataset, device):
-    # alphas = [0.0, 0.3, 0.5, 0.7, 1.0]
-    alphas = [0.7]
-    # alphas = [1.0]
+    alphas = [0.0, 0.3, 0.5, 0.7, 1.0]
     tile = 224
     trainee = TraineeAttacker.load_from_checkpoint(ckpt, map_location=device)
     model = AttackerInference(trainee, device, compile=False)
