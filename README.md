@@ -1,0 +1,1 @@
+Output of `python attack_dataset.py /datasets/imagenet/rescale-invariant-nobox-attack/ ./models/emuzc/epoch=1237-step=3138330.ckpt --dataset in1k --device cuda --tag emuzc` is here: `/datasets/imagenet/rescale-invariant-nobox-attack/_adversarial-0.7_tag-emuzc/`. There are very visible colored artifacts which are same on most of the images.
