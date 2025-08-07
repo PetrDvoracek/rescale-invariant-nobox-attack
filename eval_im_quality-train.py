@@ -10,6 +10,8 @@ from lib import *
 
 for MODEL_NAME in [
     "tf_mobilenetv3_small_minimal_100",
+    "resnet18",
+    "tf_efficientnet_b0",
     # "tf_mobilenetv3_small_075",
     # "tf_mobilenetv3_large_100",
     # "seresnet50",
@@ -26,7 +28,7 @@ for MODEL_NAME in [
     # MODEL_NAME = "seresnet152"
     COCO = "/datasets/coco/coco/test2017"
     WANDB_PROJECT = "adversarial"
-    WANDB_NAME = MODEL_NAME
+    WANDB_NAME = f"hparam_{MODEL_NAME}"
     WANDB_GROUP = "augsim"
 
     L.pytorch.seed_everything(42, workers=True)

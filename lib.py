@@ -351,7 +351,7 @@ class DSAugmentFactor(torch.utils.data.Dataset):
         fpaths = glob.glob(f"{root}/*")
         self.images = []
         print("loading images ...\n")
-        for path in tqdm.tqdm(fpaths):
+        for path in tqdm.tqdm(fpaths[:100]):
             im = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
             if im.shape[0] < 224 or im.shape[1] < 224:
                 continue
@@ -604,6 +604,16 @@ class ModelSim(torch.nn.Module):
             plt.savefig(savepath)
 
 
+def _infer_to_get_output_shape(model, resolution=224):
+    # input is output from simulation network
+    # which has 72 channels
+    n_channels = 72
+    x = torch.randn(1, n_channels, resolution, resolution)
+    x = model(x)
+    shape = x.shape
+    return shape
+
+
 class Trainee(L.LightningModule):
     def __init__(self, model, model_sim, epochs):
         super().__init__()
@@ -611,7 +621,11 @@ class Trainee(L.LightningModule):
         self.epochs = epochs
         self.model = model
         self.model_sim = model_sim
-        self.fc = torch.nn.Linear(model.num_features, 1, bias=False)
+        output_shape = _infer_to_get_output_shape(model)
+        assert (
+            len(output_shape) == 2
+        ), f"Only 2D output is supported, got {output_shape}"
+        self.fc = torch.nn.Linear(output_shape[-1], 1, bias=False)
         self.criterion = torch.nn.L1Loss()
         self.mse = torch.nn.MSELoss()
 
