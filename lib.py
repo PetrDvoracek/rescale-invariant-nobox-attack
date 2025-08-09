@@ -351,7 +351,7 @@ class DSAugmentFactor(torch.utils.data.Dataset):
         fpaths = glob.glob(f"{root}/*")
         self.images = []
         print("loading images ...\n")
-        for path in tqdm.tqdm(fpaths[:100]):
+        for path in tqdm.tqdm(fpaths):
             im = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
             if im.shape[0] < 224 or im.shape[1] < 224:
                 continue
