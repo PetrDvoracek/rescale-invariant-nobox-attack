@@ -152,7 +152,7 @@ class TraineeAttacker(L.LightningModule):
             [
                 *self.model_attacker.parameters(),
             ],
-            # lr=1e-4,
+            lr=1e-4,
         )
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
             optimizer, T_0=40, T_mult=2, eta_min=1e-6, last_epoch=-1
@@ -348,25 +348,27 @@ class TraineeAttacker(L.LightningModule):
 
 class DSAugmentFactor(torch.utils.data.Dataset):
     def __init__(self, root, enlarge=None):
-        fpaths = glob.glob(f"{root}/*")
-        self.images = []
+        self.im_paths = glob.glob(f"{root}/*")
         print("loading images ...\n")
-        for path in tqdm.tqdm(fpaths):
+        paths_to_remove = []
+        for path in tqdm.tqdm(self.im_paths):
             im = cv2.cvtColor(cv2.imread(path), cv2.COLOR_BGR2RGB)
+            # filter too small images
             if im.shape[0] < 224 or im.shape[1] < 224:
-                continue
-            self.images.append(im)
+                paths_to_remove.append(path)
+        self.im_paths = [path for path in self.im_paths if path not in paths_to_remove]
 
         # make more iterations per epoch
         if enlarge is not None:
-            self.images = self.images * enlarge
+            self.im_paths = self.im_paths * enlarge
         print("done")
 
     def __len__(self):
-        return len(self.images)
+        return len(self.im_paths)
 
     def __getitem__(self, idx):
-        im_orig = self.images[idx]
+        im_path = self.im_paths[idx % len(self.im_paths)]
+        im_orig = cv2.cvtColor(cv2.imread(im_path), cv2.COLOR_BGR2RGB)
 
         im_orig = DSAugmentFactor.random_crop(im_orig)
         im_aug, y = DSAugmentFactor.augment_img(im_orig)
@@ -604,11 +606,11 @@ class ModelSim(torch.nn.Module):
             plt.savefig(savepath)
 
 
-def _infer_to_get_output_shape(model, resolution=224):
+def _infer_to_get_output_shape(model, resolution=224, device="cuda"):
     # input is output from simulation network
     # which has 72 channels
     n_channels = 72
-    x = torch.randn(1, n_channels, resolution, resolution)
+    x = torch.randn(1, n_channels, resolution, resolution).to(device)
     x = model(x)
     shape = x.shape
     return shape
@@ -621,7 +623,7 @@ class Trainee(L.LightningModule):
         self.epochs = epochs
         self.model = model
         self.model_sim = model_sim
-        output_shape = _infer_to_get_output_shape(model)
+        output_shape = _infer_to_get_output_shape(model, device="cuda")
         assert (
             len(output_shape) == 2
         ), f"Only 2D output is supported, got {output_shape}"

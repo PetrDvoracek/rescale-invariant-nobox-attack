@@ -35,11 +35,16 @@ from lib import *
 
 BATCH_SIZE = 16
 WORKERS = 8
-EPOCHS = 10_000
+EPOCHS = 1_245
 RES = 224
 
-MODEL_NAME = "se_resnet50"
-MODEL_IMQ = "./models/tf_mobilenetv3_small_minimal_100_epoch=epoch=19_train_loss=train_loss=0.ckpt"
+# MODEL_NAME = "resnext50_32x4d"  # se_resnet50, efficientnet-b4, resnext50_32x4d
+MODEL_NAME = "se_resnet50"  # se_resnet50, efficientnet-b4, resnext50_32x4d
+# MODEL_IMQ = "./models/quality_estimators/tf_efficientnet_b0_epoch=epoch=19_train_loss=train_loss=0.ckpt"
+MODEL_IMQ = (
+    "./models/quality_estimators/resnet18_epoch=epoch=19_train_loss=train_loss=0.ckpt"
+)
+# MODEL_IMQ = "./models/quality_estimators/tf_mobilenetv3_small_minimal_100_epoch=epoch=19_train_loss=train_loss=0-v4.ckpt"
 # MODEL_NAME = "timm-efficientnet-b3"
 # MODEL_NAME = "custom-2layers"
 IN1K = "/datasets/imagenet/"
@@ -188,7 +193,7 @@ trainer = L.Trainer(
         L.pytorch.callbacks.ModelCheckpoint(
             dirpath=f"./models/{id}",
             save_top_k=-1,  # save all
-            every_n_train_steps=2535,
+            every_n_train_steps=2535 * 5,
         ),
         L.pytorch.callbacks.LearningRateMonitor(),
     ],

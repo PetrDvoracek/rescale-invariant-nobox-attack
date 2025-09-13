@@ -31,8 +31,14 @@ def prepare_in1k(path, imagenet_classes):
     "--dataset", type=click.Choice(["in1k", "coco", "cityscapes"]), default=""
 )
 @click.option("--device", default="cpu")
-def main(dataset_root, ckpt, tag, dataset, device):
-    alphas = [0.0, 0.3, 0.5, 0.7, 1.0]
+@click.option(
+    "--alphas",
+    "-a",
+    type=float,
+    multiple=True,
+    default=[0.0, 0.3, 0.5, 0.7, 1.0],
+)
+def main(dataset_root, ckpt, tag, dataset, device, alphas: list[float]):
     tile = 224
     trainee = TraineeAttacker.load_from_checkpoint(ckpt, map_location=device)
     model = AttackerInference(trainee, device, compile=False)
@@ -93,7 +99,7 @@ def main(dataset_root, ckpt, tag, dataset, device):
 
         h2add = tile - (h_orig % tile)
         w2add = tile - (w_orig % tile)
-        x_orig_pad = np.zeros((h_orig + h2add, w_orig + w2add, c_orig), dtype=im.dtype)
+        x_orig_pad = np.pad(im, ((0, h2add), (0, w2add), (0, 0)), mode="reflect")
         x_orig_pad[:h_orig, :w_orig, :] = im
         im = x_orig_pad
 
