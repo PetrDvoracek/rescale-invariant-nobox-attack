@@ -70,7 +70,7 @@ class JPEGCompressionDistortion(Distortion):
         return f"jpeg"
 
 def process_image(img_path, distortion, output_dir, common_root):
-    """Process a single image: apply distortion, save, and calculate SSIM"""
+    """Process a single image: apply distortion, save, and calculate SSIM and PSNR"""
     # Load image (BGR format)
     img = cv2.imread(img_path, cv2.IMREAD_COLOR)
     if img is None:
@@ -96,7 +96,12 @@ def process_image(img_path, distortion, output_dir, common_root):
     
     # Calculate SSIM for color images
     ssim_score = ssim(img, distorted_img, data_range=1.0, channel_axis=2)
-    return ssim_score
+    
+    # Calculate PSNR
+    mse = np.mean((img - distorted_img) ** 2)
+    psnr_score = 20 * np.log10(1.0 / np.sqrt(mse)) if mse > 0 else float('inf')
+    
+    return ssim_score, psnr_score
 
 def get_distortion_names():
     """Get available distortion names"""
@@ -165,18 +170,21 @@ def main():
     
     # Process images in parallel
     with Pool(processes=num_processes) as pool:
-        ssim_scores = list(tqdm.tqdm(pool.imap(process_func, image_paths), 
-                                   total=len(image_paths), 
-                                   desc=f"Processing images with {distortion.get_name()}"))
+        results = list(tqdm.tqdm(pool.imap(process_func, image_paths), 
+                                 total=len(image_paths), 
+                                 desc=f"Processing images with {distortion.get_name()}"))
     
     # Filter out None values (failed loads)
-    ssim_scores = [score for score in ssim_scores if score is not None]
+    results = [result for result in results if result is not None]
     
-    if ssim_scores:
+    if results:
+        ssim_scores, psnr_scores = zip(*results)
         avg_ssim = np.mean(ssim_scores)
+        avg_psnr = np.mean(psnr_scores)
         print(f"\nDistortion: {distortion.get_name()}")
         print(f"Average SSIM: {avg_ssim:.4f}")
-        print(f"Processed {len(ssim_scores)} images")
+        print(f"Average PSNR: {avg_psnr:.4f}")
+        print(f"Processed {len(results)} images")
         print(f"Distorted images saved in: {os.path.join(args.output_dir, distortion.get_name())}")
 
 if __name__ == "__main__":
