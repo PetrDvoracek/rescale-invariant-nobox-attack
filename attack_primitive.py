@@ -8,6 +8,7 @@ import tqdm
 from multiprocessing import Pool, cpu_count
 from functools import partial
 from abc import ABC, abstractmethod
+from sewar.full_ref import vifp, msssim
 
 class Distortion(ABC):
     """Abstract base class for image distortions"""
@@ -70,7 +71,7 @@ class JPEGCompressionDistortion(Distortion):
         return f"jpeg"
 
 def process_image(img_path, distortion, output_dir, common_root):
-    """Process a single image: apply distortion, save, and calculate SSIM and PSNR"""
+    """Process a single image: apply distortion, save, and calculate SSIM, PSNR, VIF, FSIM, and MS-SSIM"""
     # Load image (BGR format)
     img = cv2.imread(img_path, cv2.IMREAD_COLOR)
     if img is None:
@@ -101,7 +102,16 @@ def process_image(img_path, distortion, output_dir, common_root):
     mse = np.mean((img - distorted_img) ** 2)
     psnr_score = 20 * np.log10(1.0 / np.sqrt(mse)) if mse > 0 else float('inf')
     
-    return ssim_score, psnr_score
+    # Calculate VIF
+    vif_score = vifp(img, distorted_img)
+    
+    # # Calculate FSIM
+    # fsim_score = fsim(img, distorted_img)
+    
+    # Calculate MS-SSIM
+    msssim_score = msssim((img * 255).astype(np.uint8), (distorted_img * 255).astype(np.uint8))
+    
+    return ssim_score, psnr_score, vif_score, 0, msssim_score
 
 def get_distortion_names():
     """Get available distortion names"""
@@ -117,7 +127,7 @@ def get_distortion(distortion_type, **kwargs):
     return distortions[distortion_type](**kwargs)
 
 def main():
-    parser = argparse.ArgumentParser(description='Apply distortions to images and calculate SSIM')
+    parser = argparse.ArgumentParser(description='Apply distortions to images and calculate quality metrics')
     parser.add_argument('glob_pattern', type=str, help='Glob pattern for input images')
     parser.add_argument('--distortion', type=str, default=get_distortion_names()[0], 
                        choices=get_distortion_names(),
@@ -178,12 +188,18 @@ def main():
     results = [result for result in results if result is not None]
     
     if results:
-        ssim_scores, psnr_scores = zip(*results)
+        ssim_scores, psnr_scores, vif_scores, fsim_scores, msssim_scores = zip(*results)
         avg_ssim = np.mean(ssim_scores)
         avg_psnr = np.mean(psnr_scores)
+        avg_vif = np.mean(vif_scores)
+        avg_fsim = np.mean(fsim_scores)
+        avg_msssim = np.mean(msssim_scores)
         print(f"\nDistortion: {distortion.get_name()}")
         print(f"Average SSIM: {avg_ssim:.4f}")
         print(f"Average PSNR: {avg_psnr:.4f}")
+        print(f"Average VIF: {avg_vif:.4f}")
+        print(f"Average FSIM: {avg_fsim:.4f}")
+        print(f"Average MS-SSIM: {avg_msssim:.4f}")
         print(f"Processed {len(results)} images")
         print(f"Distorted images saved in: {os.path.join(args.output_dir, distortion.get_name())}")
 
