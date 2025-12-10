@@ -407,7 +407,7 @@ def process_image(img_path, distortion, output_dir, common_root):
     psnr_score = 20 * np.log10(1.0 / np.sqrt(mse)) if mse > 0 else float("inf")
 
     # Calculate VIF
-    vif_score = vifp(img, distorted_img)
+    vif_score = vifp(img, distorted_img.astype(np.float32))
 
     # # Calculate FSIM
     # fsim_score = fsim(img, distorted_img)
