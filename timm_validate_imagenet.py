@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """ImageNet Validation Script
 source: timm library ( https://github.com/huggingface/pytorch-image-models/blob/main/validate.py )
+this works with timm==0.9.16
 
 This script was modified.
 

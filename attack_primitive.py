@@ -11,6 +11,8 @@ from functools import partial
 from abc import ABC, abstractmethod
 from sewar.full_ref import vifp, msssim
 
+cv2.setNumThreads(0)  # Disable OpenCV multithreading to avoid oversubscription
+
 
 class Distortion(ABC):
     """Abstract base class for image distortions"""
@@ -400,7 +402,14 @@ def process_image(img_path, distortion, output_dir, common_root):
     cv2.imwrite(output_path, distorted_img_uint8)
 
     # Calculate SSIM for color images
-    ssim_score = ssim(img, distorted_img, data_range=1.0, channel_axis=2)
+    # TODO pregenerovat tak aby sedelo se skriptem measure_similarity.py
+    # nastavit SSIM pri porovnavani uint8
+    ssim_score = ssim(
+        (img * 255).astype(np.uint8),
+        distorted_img_uint8,
+        data_range=255,
+        channel_axis=2,
+    )
 
     # Calculate PSNR
     mse = np.mean((img - distorted_img) ** 2)
@@ -412,11 +421,11 @@ def process_image(img_path, distortion, output_dir, common_root):
     # # Calculate FSIM
     # fsim_score = fsim(img, distorted_img)
 
-    # Calculate MS-SSIM
-    msssim_score = msssim(
-        (img * 255).astype(np.uint8), (distorted_img * 255).astype(np.uint8)
-    )
-
+    # # Calculate MS-SSIM
+    # msssim_score = msssim(
+    #     (img * 255).astype(np.uint8), (distorted_img * 255).astype(np.uint8)
+    # )
+    msssim_score = 0
     return ssim_score, psnr_score, vif_score, 0, msssim_score
 
 
@@ -477,6 +486,12 @@ Distortion-specific parameters can be found by checking the help for each distor
         default=None,
         help="Number of processes to use (default: number of CPU cores)",
     )
+    parser.add_argument(
+        "--max_images",
+        type=int,
+        default=None,
+        help="Maximum number of images to process (default: all images)",
+    )
 
     # Let each distortion class add its own arguments
     for distortion_cls in distortion_classes.values():
@@ -486,6 +501,11 @@ Distortion-specific parameters can be found by checking the help for each distor
 
     # Get all image files matching the glob pattern
     image_paths = glob.glob(args.glob_pattern)
+    if args.max_images is not None:
+        np.random.seed(42)
+        image_paths = np.random.choice(
+            image_paths, size=args.max_images, replace=False
+        ).tolist()
 
     if not image_paths:
         print("No images found matching the pattern")
@@ -524,7 +544,7 @@ Distortion-specific parameters can be found by checking the help for each distor
     with Pool(processes=num_processes) as pool:
         results = list(
             tqdm.tqdm(
-                pool.imap(process_func, image_paths),
+                pool.imap_unordered(process_func, image_paths, chunksize=4),
                 total=len(image_paths),
                 desc=f"Processing images with {distortion.get_name()}",
             )

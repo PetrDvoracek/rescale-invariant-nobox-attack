@@ -1,0 +1,3 @@
+# low version of timm because of timm_validate_imagenet.py
+# when using latest 1.0.22, I got segmentation fault
+timm==0.9.16

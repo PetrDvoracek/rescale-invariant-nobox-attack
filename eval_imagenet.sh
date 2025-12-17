@@ -15,7 +15,7 @@
 
 # NEW
 
-for x in 0.0 0.85 1.0 1.15 1.3; do python timm_validate_imagenet.py --data-dir /datasets/imagenet/rescale-invariant-nobox-attack/_adversarial-${x}_tag-emuzc-reflect/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-${x}_tag-emuzc-reflect.csv; done
+# for x in 0.0 0.85 1.0 1.15 1.3; do python timm_validate_imagenet.py --data-dir /datasets/imagenet/rescale-invariant-nobox-attack/_adversarial-${x}_tag-emuzc-reflect/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-${x}_tag-emuzc-reflect.csv; done
 
 # x=1.15
 # m=emuzc-reflect # ssim 0.558124
@@ -30,8 +30,8 @@ for x in 0.0 0.85 1.0 1.15 1.3; do python timm_validate_imagenet.py --data-dir /
 # x=0.75
 # python timm_validate_imagenet.py --data-dir /datasets/imagenet/rescale-invariant-nobox-attack/existing_val_ags-${x}/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-${x}_tag-existing-ags.csv
 # TODO
-x=1.3 # ssim subset 0.574081629255643 subset
-python timm_validate_imagenet.py --data-dir /datasets/imagenet/rescale-invariant-nobox-attack/existing_val_bei-${x}/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-${x}_tag-existing-bei.csv
+# x=1.3 # ssim subset 0.574081629255643 subset
+# python timm_validate_imagenet.py --data-dir /datasets/imagenet/rescale-invariant-nobox-attack/existing_val_bei-${x}/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-${x}_tag-existing-bei.csv
 
 # x=0.8
 # m=lhdxy_used-reflect # ssim 0.558124
@@ -39,3 +39,8 @@ python timm_validate_imagenet.py --data-dir /datasets/imagenet/rescale-invariant
 
 # python timm_validate_imagenet.py --data-dir /datasets/imagenet/kokosaci/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-x.x_tag-HIT.csv
 # python timm_validate_imagenet.py --data-dir /datasets/imagenet/val_origsizexorigsize__0.7x/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-0.7_tag-orig.csv
+
+# PRIITIVE SSIM 0.57
+DATASET_ROOT="./val_primitive/"
+
+for x in $(ls $DATASET_ROOT --ignore="*.csv"); do python timm_validate_imagenet.py --data-dir ${DATASET_ROOT}/${x} --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./${DATASET_ROOT}/${x}.csv; done
