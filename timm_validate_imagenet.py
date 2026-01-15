@@ -22,10 +22,12 @@ from collections import OrderedDict
 from contextlib import suppress
 from functools import partial
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.parallel
 
+from skimage.metrics import structural_similarity as ssim
 from timm.data import (
     create_dataset,
     create_loader,
@@ -44,6 +46,7 @@ from timm.utils import (
     check_batch_size_retry,
     ParseKwargs,
 )
+from attack_primitive import get_distortion_classes
 
 try:
     from apex import amp
@@ -374,6 +377,18 @@ parser.add_argument(
     action="store_true",
     help="Enable batch size decay & retry for single model validation",
 )
+# Let each distortion class add its own arguments
+distortion_classes = get_distortion_classes()
+for distortion_cls in distortion_classes.values():
+    distortion_cls.add_arguments(parser)
+
+parser.add_argument(
+    "--distortion",
+    type=str,
+    default=None,
+    choices=list(distortion_classes.keys()),
+    help="Type of distortion to apply",
+)
 
 
 def validate(args):
@@ -448,6 +463,14 @@ def validate(args):
 
     param_count = sum([m.numel() for m in model.parameters()])
     _logger.info("Model %s created, param count: %d" % (args.model, param_count))
+
+    distortion = None
+    if args.distortion:
+        distortion_classes = get_distortion_classes()
+        distortion_cls = distortion_classes.get(args.distortion)
+        if distortion_cls:
+            distortion = distortion_cls.from_args(args)
+            _logger.info(f"Using distortion: {args.distortion}")
 
     data_config = resolve_data_config(
         vars(args),
@@ -537,6 +560,7 @@ def validate(args):
     losses = AverageMeter()
     top1 = AverageMeter()
     top5 = AverageMeter()
+    ssim_scores = []
 
     model.eval()
     with torch.no_grad():
@@ -556,6 +580,12 @@ def validate(args):
                 input = input.to(device)
             if args.channels_last:
                 input = input.contiguous(memory_format=torch.channels_last)
+
+            if distortion is not None:
+                input, ssim_score = apply_distortion_to_batch(
+                    input, distortion, data_config, device
+                )
+                ssim_scores.append(ssim_score)
 
             # compute output
             with amp_autocast():
@@ -593,6 +623,7 @@ def validate(args):
         img_size=data_config["input_size"][-1],
         crop_pct=crop_pct,
         interpolation=data_config["interpolation"],
+        ssim_avg=round(sum(ssim_scores) / len(ssim_scores), 4) if ssim_scores else None,
     )
 
     _logger.info(
@@ -724,6 +755,55 @@ def write_results(results_file, results, format="csv"):
             for r in results:
                 dw.writerow(r)
             cf.flush()
+
+
+def apply_distortion_to_batch(batch_tensor, distortion, data_config, device):
+    """
+    Applies a distortion to a batch of image tensors and calculates SSIM for each distorted image.
+    """
+
+    # 1. De-normalize and convert to numpy
+    mean = torch.tensor(data_config["mean"], device=device).view(1, -1, 1, 1)
+    std = torch.tensor(data_config["std"], device=device).view(1, -1, 1, 1)
+
+    # De-normalize: (tensor * std) + mean
+    batch_tensor = batch_tensor * std + mean
+
+    # Move to CPU and convert to numpy, permute to N, H, W, C for distortion fns
+    batch_np = batch_tensor.cpu().numpy().transpose(0, 2, 3, 1)
+
+    distorted_batch = []
+    ssim_scores = []
+    for img_np in batch_np:
+        # Clip to [0, 1] just in case, as distortions expect this range
+        img_np_clipped = np.clip(img_np, 0, 1)
+
+        # Apply distortion
+        distorted_img_np = distortion.apply(img_np_clipped)
+        distorted_batch.append(distorted_img_np)
+
+        # Calculate SSIM between original and distorted image
+        ssim_score = ssim(
+            img_np_clipped,
+            distorted_img_np,
+            multichannel=True,
+            data_range=1.0,
+            channel_axis=2,
+        )
+        ssim_scores.append(ssim_score)
+
+    # 2. Convert back to tensor and re-normalize
+    distorted_batch_np = np.array(distorted_batch, dtype=np.float32)
+
+    # Permute back to N, C, H, W
+    distorted_batch_tensor = torch.from_numpy(
+        distorted_batch_np.transpose(0, 3, 1, 2)
+    ).to(device)
+
+    # Re-normalize: (tensor - mean) / std
+    distorted_batch_tensor = (distorted_batch_tensor - mean) / std
+
+    return distorted_batch_tensor, sum(ssim_scores) / len(ssim_scores)
 
 
 if __name__ == "__main__":
