@@ -40,7 +40,11 @@
 # python timm_validate_imagenet.py --data-dir /datasets/imagenet/kokosaci/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-x.x_tag-HIT.csv
 # python timm_validate_imagenet.py --data-dir /datasets/imagenet/val_origsizexorigsize__0.7x/ --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./eval_adversarial-0.7_tag-orig.csv
 
-# PRIITIVE SSIM 0.57
-DATASET_ROOT="./val_primitive/"
+dataset_root="./val_primitive_0.52_color/"
 
-for x in $(ls $DATASET_ROOT --ignore="*.csv"); do python timm_validate_imagenet.py --data-dir ${DATASET_ROOT}/${x} --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./${DATASET_ROOT}/${x}.csv; done
+for x in $(ls $dataset_root --ignore="*.csv"); do python timm_validate_imagenet.py --data-dir ${dataset_root}/${x} --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./${dataset_root}/${x}.csv; done
+
+
+# # Calculate Contrast Increase
+# dataset_root="./tmp"
+# for x in $(ls $dataset_root --ignore="*.csv"); do python timm_validate_imagenet.py --data-dir ${dataset_root}/${x} --torchcompile --device cuda --amp --model hardcoded_in_script --batch-size 64 --results-file ./${dataset_root}/${x}.csv; done

@@ -43,7 +43,7 @@ class Distortion(ABC):
 class NoiseGaussianDistortion(Distortion):
     """Gaussian noise distortion"""
 
-    def __init__(self, noise_std: float = 14.0):
+    def __init__(self, noise_std: float = 17.0):
         self.noise_std = noise_std
 
     def apply(self, img: np.ndarray) -> np.ndarray:
@@ -70,7 +70,7 @@ class NoiseGaussianDistortion(Distortion):
 class BlurDistortion(Distortion):
     """Gaussian blur distortion"""
 
-    def __init__(self, sigma: float = 1.0):
+    def __init__(self, sigma: float = 5.0):
         self.sigma = sigma
         self.kernel_size = int(4 * self.sigma - 1)
 
@@ -99,7 +99,7 @@ class BlurDistortion(Distortion):
 class JPEGCompressionDistortion(Distortion):
     """JPEG compression distortion"""
 
-    def __init__(self, quality: int = 50):
+    def __init__(self, quality: int = 2):
         self.quality = quality
 
     def apply(self, img: np.ndarray) -> np.ndarray:
@@ -131,7 +131,7 @@ class JPEGCompressionDistortion(Distortion):
 class NoiseSaltPepperDistortion(Distortion):
     """Salt and pepper noise distortion"""
 
-    def __init__(self, noise_ratio: float = 0.03):
+    def __init__(self, noise_ratio: float = 0.036):
         self.noise_ratio = noise_ratio
 
     def apply(self, img: np.ndarray) -> np.ndarray:
@@ -170,7 +170,7 @@ class NoiseSaltPepperDistortion(Distortion):
 class NoisePoissonDistortion(Distortion):
     """Poisson noise distortion"""
 
-    def __init__(self, scale: float = 1.0):
+    def __init__(self, scale: float = 0.26):
         self.scale = scale
 
     def apply(self, img: np.ndarray) -> np.ndarray:
@@ -199,7 +199,7 @@ class NoisePoissonDistortion(Distortion):
 class NoiseSpeckleDistortion(Distortion):
     """Speckle (multiplicative) noise distortion"""
 
-    def __init__(self, speckle_std: float = 0.1):
+    def __init__(self, speckle_std: float = 0.2):
         self.noise_std = speckle_std
 
     def apply(self, img: np.ndarray) -> np.ndarray:
@@ -226,7 +226,7 @@ class NoiseSpeckleDistortion(Distortion):
 class NoiseUniformDistortion(Distortion):
     """Uniform noise distortion"""
 
-    def __init__(self, noise_range: float = 0.1):
+    def __init__(self, noise_range: float = 0.115):
         self.noise_range = noise_range
 
     def apply(self, img: np.ndarray) -> np.ndarray:
@@ -302,7 +302,7 @@ class MotionBlurDistortion(Distortion):
 class BrightnessDistortion(Distortion):
     """Brightness adjustment distortion"""
 
-    def __init__(self, brightness_factor: float = 1.2):
+    def __init__(self, brightness_factor: float = 0.1):
         self.brightness_factor = brightness_factor
 
     def apply(self, img: np.ndarray) -> np.ndarray:
@@ -328,7 +328,7 @@ class BrightnessDistortion(Distortion):
 class ContrastDistortion(Distortion):
     """Contrast adjustment distortion"""
 
-    def __init__(self, contrast_factor: float = 1.5):
+    def __init__(self, contrast_factor: float = 0.1):
         self.contrast_factor = contrast_factor
 
     def apply(self, img: np.ndarray) -> np.ndarray:
@@ -356,7 +356,7 @@ class ContrastDistortion(Distortion):
 class GammaDistortion(Distortion):
     """Gamma correction distortion"""
 
-    def __init__(self, gamma: float = 0.5):
+    def __init__(self, gamma: float = 0.1):
         self.gamma = gamma
 
     def apply(self, img: np.ndarray) -> np.ndarray:
