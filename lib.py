@@ -144,6 +144,11 @@ class TraineeAttacker(L.LightningModule):
         for param in self.blackbox.parameters():
             param.requires_grad_(False)
 
+        # Counters for loss selection tracking
+        self.quality_selected_count = 0
+        self.strength_selected_count = 0
+        self.total_selections = 0
+
     def forward(self, x):
         return self.model_attacker(x)
 
@@ -188,8 +193,15 @@ class TraineeAttacker(L.LightningModule):
             ).to(torch.uint8)
             self.logger.log_image(f"{stage}_diff", [diff_grid])
 
-        loss, quality, advstrength = self.loss(lbls, advers_ims)
+        loss, quality, advstrength, selected = self.loss(lbls, advers_ims)
         # advstrength = self.loss_advers_strength(lbls, advers_ims)
+
+        # Update selection counters
+        self.total_selections += 1
+        if selected == "quality":
+            self.quality_selected_count += 1
+        else:
+            self.strength_selected_count += 1
 
         x_pad, adv_x_pad = ims, advers_ims
         # paddings = (6, 6, 6, 6, 0, 0, 0, 0)
@@ -227,12 +239,26 @@ class TraineeAttacker(L.LightningModule):
         # loss = images_similarity
         # loss = quality
 
+        # Calculate selection frequencies
+        quality_freq = (
+            self.quality_selected_count / self.total_selections
+            if self.total_selections > 0
+            else 0
+        )
+        strength_freq = (
+            self.strength_selected_count / self.total_selections
+            if self.total_selections > 0
+            else 0
+        )
+
         self.log_dict(
             {
                 f"{stage}_loss": loss.item(),
                 # f"{stage}_imq": quality.item(),
                 f"{stage}_imq": images_similarity.item(),
                 f"{stage}_advs": advstrength.item(),
+                f"{stage}_quality_selected_freq": quality_freq,
+                f"{stage}_strength_selected_freq": strength_freq,
                 f"{stage} exec time (s)": time.time() - before,
             },
             on_epoch=True,
@@ -243,7 +269,15 @@ class TraineeAttacker(L.LightningModule):
     def loss(self, y_true, y_pred):
         quality = self.loss_image_quality(y_true, y_pred)
         strength = self.loss_advers_strength(y_true, y_pred)
-        return torch.max(quality * 15, strength), quality, strength
+        quality_scaled = quality * 15
+
+        # Track which loss component is selected
+        if quality_scaled > strength:
+            selected = "quality"
+        else:
+            selected = "strength"
+
+        return torch.max(quality_scaled, strength), quality, strength, selected
         # return quality, quality, strength
 
     def loss_image_quality(self, y_true, y_pred):
@@ -290,6 +324,12 @@ class TraineeAttacker(L.LightningModule):
         diff = self.model_augmentfactor(y_true, y_pred)
         # diff = torch.clip(diff, 0, 1)
         return torch.mean(diff)
+
+    def on_train_epoch_start(self):
+        # Reset counters at the start of each training epoch
+        self.quality_selected_count = 0
+        self.strength_selected_count = 0
+        self.total_selections = 0
 
     def training_step(self, batch, idx):
         return self._step(batch, idx, stage="train")
