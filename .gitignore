@@ -1,0 +1,24 @@
+*.jpeg
+*.jpg
+*.JPEG
+
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Editor / iteration backups
+*.bak
+*~
+
+# Local run outputs (not part of the reproduction deliverable)
+/log/
+/run_logs/
+/models/
+*.csv
+
+# Environments
+.venv/
+venv/
+.env

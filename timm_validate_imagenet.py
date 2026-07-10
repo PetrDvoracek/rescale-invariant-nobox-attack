@@ -488,6 +488,11 @@ def validate(args):
         input_img_mode = "RGB" if data_config["input_size"][0] == 3 else "L"
     else:
         input_img_mode = args.input_img_mode
+    # timm 0.9.2 compat: this vendored validate.py is from a newer timm whose
+    # create_dataset accepts num_samples/input_key/input_img_mode/target_key. The
+    # installed timm (0.9.2) does not — they are forwarded to ImageDataset.__init__
+    # and raise TypeError. For a plain ImageFolder val set these knobs are unused
+    # (default reader returns RGB), so drop them; scoring is unaffected.
     dataset = create_dataset(
         root=root_dir,
         name=args.dataset,
@@ -495,10 +500,6 @@ def validate(args):
         download=args.dataset_download,
         load_bytes=args.tf_preprocessing,
         class_map=args.class_map,
-        num_samples=args.num_samples,
-        input_key=args.input_key,
-        input_img_mode=input_img_mode,
-        target_key=args.target_key,
     )
 
     if args.valid_labels:
@@ -526,7 +527,8 @@ def validate(args):
         num_workers=args.workers,
         crop_pct=crop_pct,
         crop_mode=data_config["crop_mode"],
-        crop_border_pixels=args.crop_border_pixels,
+        # crop_border_pixels: not present in timm 0.9.2's create_loader (newer-timm
+        # arg); dropped for env compat. Unused for standard center-crop validation.
         pin_memory=args.pin_mem,
         device=device,
         tf_preprocessing=args.tf_preprocessing,
@@ -644,32 +646,18 @@ def main():
         model_names = list_models(args.model)
         model_cfgs = [(args.model, c) for c in sorted(checkpoints, key=natural_key)]
     else:
-        # validate all models in a list of names with pretrained checkpoints
+        # validate all models in a list of names with pretrained checkpoints.
+        # The victim list (F_N) is lifted into explicit, commented data in
+        # rina/victims.py (PROGRAM.md §3.3 — "keep the vendored validator, lift
+        # only the hardcoded model list into explicit data"). VICTIMS_SMOKE (a
+        # single tiny victim) is selected when RINA_VICTIMS_SMOKE=1 for fast CPU
+        # smoke runs.
         args.pretrained = True
+        from rina.victims import VICTIMS, VICTIMS_SMOKE
+
+        _victims = VICTIMS_SMOKE if os.environ.get("RINA_VICTIMS_SMOKE") == "1" else VICTIMS
         model_names = list_models(
-            [
-                "tf_efficientnet_b*.in1k",
-                "swin_base_patch4_window7_224.ms_in1k",
-                "swin_large_patch4_window7_224.ms_in22k",
-                "swin_small_patch4_window7_224.ms_in1k",
-                "swin_tiny_patch4_window7_224.ms_in1k",
-                "deit_base_patch16_224.fb_in1k",
-                "deit_small_patch16_224.fb_in1k",
-                "deit_tiny_patch16_224.fb_in1k",
-                "vit_tiny_patch16_224.augreg_in21k_ft_in1k",
-                "vit_small_patch16_224.augreg_in21k_ft_in1k",
-                "vit_large_patch16_224.augreg_in21k_ft_in1k",
-                "vit_base_patch16_224.augreg_in21k_ft_in1k",
-                "vit_base_patch16_224.augreg2_in21k_ft_in1k",
-                "resnet18.a1_in1k",
-                "resnet34.a1_in1k",
-                "resnet50.a1_in1k",
-                "resnet101.a1_in1k",
-                "vgg11.tv_in1k",
-                "vgg13.tv_in1k",
-                "vgg16.tv_in1k",
-                "vgg19.tv_in1k",
-            ],
+            list(_victims),
             pretrained=True,
             exclude_filters=_NON_IN1K_FILTERS,
         )

@@ -1,0 +1,49 @@
+{
+    "name": "Playground",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.black-formatter",
+                "ms-toolsai.jupyter",
+                "ms-python.python",
+                "redhat.vscode-yaml",
+                "GitLab.gitlab-workflow",
+                "ms-azuretools.vscode-docker",
+                "mechatroner.rainbow-csv"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "black-formatter.interpreter": [
+                    "/usr/bin/python"
+                ],
+                "python.defaultInterpreterPath": "/usr/bin/python",
+                "editor.formatOnSave": true
+            }
+        }
+    },
+    "postCreateCommand": "bash .devcontainer/postCreate.sh",
+    // run as the non-root user created in the Dockerfile; its UID/GID is
+    // rewritten to match the local user, so bind-mounted files stay accessible
+    "remoteUser": "pedro",
+    "updateRemoteUserUID": true,
+    // "initializeCommand": "xhost local:root", // X11
+    // "containerEnv": {
+    //     // https://stackoverflow.com/questions/60733288/devcontainer-how-to-make-x-display-work-mount-graphics-inside-docker-in-visual/60896869#60896869
+    //     "DISPLAY": "unix:0" // X11
+    // },
+    "shutdownAction": "none", // do not kill container after disconnect
+    "mounts": [
+        "type=bind,src=/home/pedro/datasets,dst=/datasets/",
+        "type=bind,src=/mnt/nas,dst=/mnt/nas/",
+        // "source=/tmp/.X11-unix,target=/tmp/.X11-unix,type=bind,consistency=cached", // X11
+        "source=/etc/localtime,target=/etc/localtime,type=bind,consistency=cached" // sync time
+    ],
+    "runArgs": [
+        "--gpus=all", // remove if you do not use nvidia gpu
+        // TODO adjust to your HW
+        "--shm-size=50gb" // fix torch image dataloader error
+    ]
+}
