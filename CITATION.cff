@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use this software or reproduction, please cite the paper below."
+type: software
+title: "Rescale-invariant no-box attack (reproduction)"
+authors:
+  - family-names: "Dvořáček"
+    given-names: "Petr"
+  - family-names: "Hurtík"
+    given-names: "Petr"
+  - family-names: "Števuliáková"
+    given-names: "Petra"
+preferred-citation:
+  type: article
+  title: "Resolution-invariant no-box attack"
+  authors:
+    - family-names: "Dvořáček"
+      given-names: "Petr"
+    - family-names: "Hurtík"
+      given-names: "Petr"
+    - family-names: "Števuliáková"
+      given-names: "Petra"
+  journal: "Computer Vision and Image Understanding"
+  volume: 269
+  year: 2026
+  article-number: "104767"
+  doi: "10.1016/j.cviu.2026.104767"
